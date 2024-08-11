@@ -12,7 +12,7 @@ export default function News() {
        .then(response=>response.json())
        .then((data)=>{
         setNews(data.articles)
-        console.log(data.articles);
+       // console.log(data.articles);
     
     })
     .catch(error => console.error('Error fetching news:', error));
