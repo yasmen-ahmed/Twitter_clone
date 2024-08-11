@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { HiOutlinePhotograph } from 'react-icons/hi';
 import {app} from '../firebase'
 import {getStorage , ref ,uploadBytesResumable,getDownloadURL} from 'firebase/storage'
+import {addDoc,collection, serverTimestamp, getFirestore} from 'firebase/firestore'
 
 export default function Input() {
     const {data:session} = useSession(); 
@@ -12,6 +13,11 @@ export default function Input() {
     const [imageFileUrl,setImageFileUrl] = useState(null)
     const [selectedFile,setSelectedFile] = useState(null)
     const [imageFileUploading,setImageFileUploading] = useState(false)
+
+    const [text,setText]=useState('')
+    const [postLoading,setPostLoading]=useState(false)
+
+    const db =getFirestore(app);
 
 useEffect(() => {
     if(selectedFile){
@@ -21,12 +27,11 @@ useEffect(() => {
 
 const uploadImageToStorage =()=>{
     setImageFileUploading(true)
-    // const storageRef = firebase.storage().ref(`images/${selectedFile.name}`)
-    // const uploadTask = storageRef.put(selectedFile)
     const storage = getStorage(app)
     const fileName =new Date().getTime()+ "-" +selectedFile.name
     const storageRef =ref(storage,fileName)
     const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+
     uploadTask.on(
         'state_changed',
         (snapshot) => {
@@ -62,26 +67,48 @@ const uploadImageToStorage =()=>{
         }
     }
 
+    const handelSubmit = async () => {
+        setPostLoading(true);
+        const docRef = await addDoc(collection(db,'posts' ),{
+            username:session.user.username,
+            name:session.user.name,
+            text,
+            profileImg:session.user.image,
+            Timestamp:serverTimestamp(),
+            image:imageFileUrl
+        }
+    )
+    
+    setPostLoading(false)
+    setText('')
+    setImageFileUrl(null)
+    setSelectedFile(null)
+}
+
     if(!session) return null;
   return (
     <div className='flex border-b border-gray-200 p-3 space-x-3 w-full'>
         <Image className='p-1 xl-mr-2 rounded-full !h-[100%] hover:brightness-95 cursor-pointer' src={session.user.image} width={50} height="100" alt='user image'/>
         <div className='w-full divide-y divide-gray-200'>
-            <textarea className='w-full border-none outline-none tracking-wide text-gray-700 min-h-[50px] ' name="" id="" rows="2" placeholder='Whats happening ?' ></textarea>
+            <textarea 
+            className='w-full border-none outline-none tracking-wide text-gray-700 min-h-[50px] ' 
+            name="" id="" rows="2"
+             placeholder='Whats happening ?' 
+             value={text}
+             onChange={(e)=>setText(e.target.value)}
+             ></textarea>
 
             {
                 selectedFile && (
 
                         <Image
-                        className='w-full max-h-[250px] cursor-pointer object-cover'
+                        className={`w-full max-h-[250px] cursor-pointer object-cover
+                        ${imageFileUploading} ? 'animate-pulse' : '' `}
                         src={imageFileUrl}
                         alt='image'
                         width={100}
                         height={100}
-                        />
-                       // <button className='w-12 h-8 bg-red-400 text-white text-sm rounded-full hover:bg-red-500 px-2 py-1'>Delete</button>
-                   
-
+                        />                   
                 )
             }
             <div className='flex justify-between items-center pt-2.5'>
@@ -94,9 +121,12 @@ const uploadImageToStorage =()=>{
                onChange={addImageToPost}
                hidden
                />
-                <button disabled 
+                <button 
+                disabled ={text.trim() === '' || postLoading || imageFileUploading }
                 className='bg-blue-400 text-white px-4 py-1.5 rounded-full font-bold shadow-md hover:brightness-95
                 disabled:opacity-50'
+                onClick={handelSubmit}
+
                 >Post</button>
             </div>
         </div>
