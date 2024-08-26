@@ -19,11 +19,11 @@ export default function Input() {
 
     const db =getFirestore(app);
 
-useEffect(() => {
-    if(selectedFile){
-      uploadImageToStorage()  
-    }
-},[selectedFile])
+    useEffect(() => {
+        if(selectedFile){
+        uploadImageToStorage()  
+        }
+    },[selectedFile])
 
 const uploadImageToStorage =()=>{
     setImageFileUploading(true)
@@ -35,8 +35,7 @@ const uploadImageToStorage =()=>{
     uploadTask.on(
         'state_changed',
         (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           console.log('Upload is ' + progress + '% done');
         },
     (error)=>{
@@ -52,7 +51,7 @@ const uploadImageToStorage =()=>{
             setImageFileUploading(false);
           });
     }
-    )
+  )
 
 }
 
@@ -62,33 +61,43 @@ const uploadImageToStorage =()=>{
         if(file){
             setSelectedFile(file)
             setImageFileUrl(URL.createObjectURL(file));
-           
 
         }
     }
 
-    const handelSubmit = async () => {
-        setPostLoading(true);
-        const docRef = await addDoc(collection(db,'posts' ),{
-            username:session.user.username,
-            name:session.user.name,
-            text,
-            profileImg:session.user.image,
-            Timestamp:serverTimestamp(),
-            image:imageFileUrl
-        }
-    )
-    
-    setPostLoading(false)
-    setText('')
-    setImageFileUrl(null)
-    setSelectedFile(null)
-}
+ const handleSubmit = async () => {
+    setPostLoading(true);
+    try {
+      await addDoc(collection(db, "posts"), {
+        username: session.user.username,
+        name: session.user.name,
+        text,
+        profileImg: session.user.image,
+        timestamp: serverTimestamp(), // Corrected to lowercase 'timestamp'
+        image: imageFileUrl,
+      });
+      setText("");
+      setImageFileUrl(null);
+      setSelectedFile(null);
+    } catch (error) {
+      console.error("Error adding document: ", error);
+    } finally {
+      setPostLoading(false);
+      location.reload();
+    }
+  };
 
     if(!session) return null;
+
   return (
     <div className='flex border-b border-gray-200 p-3 space-x-3 w-full'>
-        <Image className='p-1 xl-mr-2 rounded-full !h-[100%] hover:brightness-95 cursor-pointer' src={session.user.image} width={50} height="100" alt='user image'/>
+        <Image className='p-1 xl-mr-2 rounded-full !h-[100%] hover:brightness-95 cursor-pointer' 
+        src={session.user.image} 
+        width={50} 
+        height="100"
+         alt='user image'
+         />
+
         <div className='w-full divide-y divide-gray-200'>
             <textarea 
             className='w-full border-none outline-none tracking-wide text-gray-700 min-h-[50px] ' 
@@ -122,11 +131,9 @@ const uploadImageToStorage =()=>{
                hidden
                />
                 <button 
-                disabled ={text.trim() === '' || postLoading || imageFileUploading }
-                className='bg-blue-400 text-white px-4 py-1.5 rounded-full font-bold shadow-md hover:brightness-95
-                disabled:opacity-50'
-                onClick={handelSubmit}
-
+                 disabled={text.trim() === "" || postLoading || imageFileUploading}
+                 className="bg-blue-400 text-white px-4 py-1.5 rounded-full font-bold shadow-md hover:brightness-95 disabled:opacity-50"
+                 onClick={handleSubmit}
                 >Post</button>
             </div>
         </div>
