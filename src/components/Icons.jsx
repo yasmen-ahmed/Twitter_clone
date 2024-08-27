@@ -6,7 +6,7 @@ import { HiOutlineChat,HiOutlineHeart,HiOutlineTrash ,HiHeart} from 'react-icons
 import {app} from '../firebase'
 import { getFirestore , doc, setDoc,deleteDoc, serverTimestamp, onSnapshot, collection } from 'firebase/firestore'
 import { useRecoilState } from 'recoil'
-import { modalState } from "../atom/modalAtom"
+import { modalState , postIdState} from "../atom/modalAtom"
 
 export default function Icons({id,name}) {
     
@@ -14,6 +14,7 @@ export default function Icons({id,name}) {
         const [isLiked,setIsLiked]=useState(false);
         const [likes,setLikes]=useState([]);
         const [open,setOpen]=useRecoilState(modalState);
+        const [postId,setPostId]=useRecoilState(postIdState);
         const db = getFirestore(app)
 
         const likePost = async ()=>{
@@ -65,7 +66,14 @@ useEffect(()=>{
     <div className='flex justify-start gap-5 p-2 text-gray-500'>
         <HiOutlineChat
          className='h-8 w-8 cursor-pointer rounded-full transition duration-500 ease-in-out p-2 hover:bg-sky-100'
-         onClick={()=> setOpen(!open)}
+         onClick={()=> {
+            if(!session){
+                signIn()
+            }else{
+                setOpen(!open)
+                setPostId(id)
+            }
+         }}
          />
      
      <div className='flex items-center'>
